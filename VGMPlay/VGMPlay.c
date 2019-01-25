@@ -6385,8 +6385,13 @@ const char* GetAccurateChipNameByChannel(void* vgmp, UINT32 channel, UINT32 *rea
     GetChipByChannel(vgmp, channel, &ChipID, &ChipType, &Channel, ChanCount);
     if (ChipType == 0xFF)
         return NULL;
-    *realChannel = Channel;
-    GetChipClock(vgmp, ChipType, &SubType);
+	if (ChipID)
+	{
+		int ChanCountTotal = ChanCount[0] + ChanCount[1] + ChanCount[2];
+		Channel += ChanCountTotal * ChipID;
+	}
+	*realChannel = Channel;
+	GetChipClock(vgmp, ChipType, &SubType);
     return GetAccurateChipName(ChipType, SubType);
 }
 
