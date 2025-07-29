@@ -73,7 +73,12 @@ void ym2413_stream_update(void *_info, stream_sample_t **outputs, int samples)
 		break;
 #endif
 	case EC_EMU2413:
-		OPLL_calc_stereo(info->chip, outputs, samples, -1);
+		stream_sample_t* pLeft = outputs[0];
+		stream_sample_t* pRight = outputs[1];
+		for (int i = 0; i < samples; ++i)
+        {
+            *pLeft++ = *pRight++ = OPLL_calc(info->chip);
+        }
 		break;
 	}
 }
@@ -147,7 +152,7 @@ int device_start_ym2413(void **_info, int EMU_CORE, int clock, int CHIP_SAMPLING
 		if (info->chip == NULL)
 			return 0;
 
-		OPLL_SetChipMode(info->chip, info->Mode);
+		OPLL_setChipMode(info->chip, info->Mode);
 		if (info->Mode)
 			OPLL_setPatch(info->chip, vrc7_inst);
 		break;
@@ -266,7 +271,7 @@ void ym2413_set_mute_mask(void *_info, UINT32 MuteMask)
 		break;
 #endif
 	case EC_EMU2413:
-		OPLL_SetMuteMask(info->chip, MuteMask);
+		OPLL_setMask(info->chip, MuteMask);
 		break;
 	}
 
