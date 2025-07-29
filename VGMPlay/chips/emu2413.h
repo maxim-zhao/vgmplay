@@ -1,7 +1,7 @@
 #ifndef _EMU2413_H_
 #define _EMU2413_H_
 
-#include "emutypes.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,9 +92,9 @@ typedef struct __OPLL {
 
   uint32_t adr;
 
-  uint32_t inp_step;
-  uint32_t out_step;
-  uint32_t out_time;
+  double inp_step;
+  double out_step;
+  double out_time;
 
   uint8_t reg[0x40];
   uint8_t test_flag;
@@ -229,9 +229,6 @@ uint32_t OPLL_toggleMask(OPLL *, uint32_t mask);
 #define OPLL_dump2patch OPLL_dumpToPatch
 #define OPLL_patch2dump OPLL_patchToDump
 #define OPLL_setChipMode OPLL_setChipType
-
-/* for vgmplay */
-void OPLL_setPanEx(OPLL *opll, uint32_t ch, int16_t pan);
 
 #ifdef __cplusplus
 }

@@ -5150,7 +5150,7 @@ UINT32 FillBuffer(void *_p, WAVE_16BS* Buffer, UINT32 BufferSize)
 		CurCLst = p->ChipListAll;
 		while(CurCLst != NULL)
 		{
-			if (! CurCLst->COpts->Disabled)
+			if (! CurCLst->COpts->Disabled && (CurCLst->COpts->ChnMute1 | CurCLst->COpts->ChnMute2 | CurCLst->COpts->ChnMute3 != 0))
 			{
 				ResampleChipStream(p, CurCLst, &TempBuf, 1);
 			}
