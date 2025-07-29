@@ -99,7 +99,7 @@ static void _stream_update(void *param, int interval)
 		break;
 #endif
 	case EC_EMU2413:
-		OPLL_calc_stereo(info->chip, DUMMYBUF, 0, -1);
+		//OPLL_calcStereo(info->chip, DUMMYBUF, 0);
 		break;
 	}
 }
