@@ -62,11 +62,12 @@ typedef struct __OPLL_SLOT {
 
 /* mask */
 #define OPLL_MASK_CH(x) (1 << (x))
-#define OPLL_MASK_HH (1 << (9))
-#define OPLL_MASK_CYM (1 << (10))
+// Note: these are tweaked for MultiDumper to maintain the ordering!
+#define OPLL_MASK_HH (1 << (13))
+#define OPLL_MASK_CYM (1 << (12))
 #define OPLL_MASK_TOM (1 << (11))
-#define OPLL_MASK_SD (1 << (12))
-#define OPLL_MASK_BD (1 << (13))
+#define OPLL_MASK_SD (1 << (10))
+#define OPLL_MASK_BD (1 << (9))
 #define OPLL_MASK_RHYTHM (OPLL_MASK_HH | OPLL_MASK_CYM | OPLL_MASK_TOM | OPLL_MASK_SD | OPLL_MASK_BD)
 
 /* rate conveter */
