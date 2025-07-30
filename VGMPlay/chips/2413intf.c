@@ -4,24 +4,23 @@
 
 ****************************************************************/
 
-#include <stdlib.h>
 #include "mamedef.h"
+#include <stdlib.h>
+#include <stddef.h>	// for NULL
 //#include "sndintrf.h"
 //#include "streams.h"
 #ifdef ENABLE_ALL_CORES
 #include "ym2413.h"
+#include "opll.h"
 #endif
 #include "emu2413.h"
 #include "2413intf.h"
 
 #ifdef ENABLE_ALL_CORES
+#define EC_NUKED	0x02	// Nuked OPLL
 #define EC_MAME		0x01	// YM2413 core from MAME
 #endif
 #define EC_EMU2413	0x00	// EMU2413 core from in_vgm, value 0 because it's better than MAME
-
-#ifndef NULL
-#define NULL	((void *)0)
-#endif
 
 /* for stream system */
 typedef struct _ym2413_state ym2413_state;
@@ -71,6 +70,9 @@ void ym2413_stream_update(void *_info, stream_sample_t **outputs, int samples)
 	case EC_MAME:
 		ym2413_update_one(info->chip, outputs, samples);
 		break;
+	case EC_NUKED:
+		OPLL_GenerateStream(info->chip, outputs, samples);
+		break;
 #endif
 	case EC_EMU2413:
 		stream_sample_t* pLeft = outputs[0];
@@ -83,13 +85,12 @@ void ym2413_stream_update(void *_info, stream_sample_t **outputs, int samples)
 	}
 }
 
-#ifdef ENABLE_ALL_CORES
-static stream_sample_t* DUMMYBUF[0x02] = {NULL, NULL};
-
 static void _stream_update(void *param, int interval)
 {
+	// Does nothing?!
+	/*
 	ym2413_state *info = (ym2413_state *)param;
-	/*stream_update(info->stream);*/
+	// stream_update(info->stream);
 
 	switch(info->EMU_CORE)
 	{
@@ -97,27 +98,24 @@ static void _stream_update(void *param, int interval)
 	case EC_MAME:
 		ym2413_update_one(info->chip, DUMMYBUF, 0);
 		break;
+	case EC_NUKED:
+		// OPLL_GenerateStream(info->chip, DUMMYBUF, 0);
+		break;
 #endif
 	case EC_EMU2413:
-		//OPLL_calcStereo(info->chip, DUMMYBUF, 0);
+		_emu2413_calc_stereo(info->chip, DUMMYBUF, 0);
 		break;
 	}
+    */
 }
-#endif
 
 //static DEVICE_START( ym2413 )
 int device_start_ym2413(void **_info, int EMU_CORE, int clock, int CHIP_SAMPLING_MODE, int CHIP_SAMPLE_RATE)
 {
 	//ym2413_state *info = get_safe_token(device);
 	ym2413_state *info;
+	int type;
 	int rate;
-
-#ifdef ENABLE_ALL_CORES
-	if (EMU_CORE >= 0x02)
-		EMU_CORE = EC_EMU2413;
-#else
-	EMU_CORE = EC_EMU2413;
-#endif
 
 	info = (ym2413_state *) calloc(1, sizeof(ym2413_state));
 	*_info = (void*) info;
@@ -146,13 +144,20 @@ int device_start_ym2413(void **_info, int EMU_CORE, int clock, int CHIP_SAMPLING
 
 		ym2413_set_update_handler(info->chip, _stream_update, info);
 		break;
+	case EC_NUKED:
+		info->chip = malloc(sizeof(opll_t));
+		//if(chiptype)
+		//	OPN2_SetChipType(ym3438_type_discrete);
+		type = info->Mode ? opll_type_ds1001 : opll_type_ym2413;
+		OPLL_Reset(info->chip, type, rate, clock);
+		break;
 #endif
 	case EC_EMU2413:
 		info->chip = OPLL_new(clock, rate);
 		if (info->chip == NULL)
 			return 0;
 
-		OPLL_setChipMode(info->chip, info->Mode);
+		OPLL_setChipType(info->chip, info->Mode);
 		if (info->Mode)
 			OPLL_setPatch(info->chip, vrc7_inst);
 		break;
@@ -197,6 +202,9 @@ void device_stop_ym2413(void *_info)
 	case EC_MAME:
 		ym2413_shutdown(info->chip);
 		break;
+	case EC_NUKED:
+		free(info->chip);
+		break;
 #endif
 	case EC_EMU2413:
 		OPLL_delete(info->chip);
@@ -219,6 +227,9 @@ void device_reset_ym2413(void *_info)
 		if (info->Mode)
 			ym2413_override_patches(info->chip, vrc7_inst);
 		break;
+	case EC_NUKED:
+		OPLL_Reset(info->chip, info->Mode ? opll_type_ds1001 : opll_type_ym2413, 0, 0);
+		break;
 #endif
 	case EC_EMU2413:
 		OPLL_reset(info->chip);
@@ -240,6 +251,9 @@ void ym2413_w(void *_info, offs_t offset, UINT8 data)
 #ifdef ENABLE_ALL_CORES
 	case EC_MAME:
 		ym2413_write(info->chip, offset & 1, data);
+		break;
+	case EC_NUKED:
+		OPLL_WriteBuffered(info->chip, offset, data);
 		break;
 #endif
 	case EC_EMU2413:
@@ -269,6 +283,9 @@ void ym2413_set_mute_mask(void *_info, UINT32 MuteMask)
 	case EC_MAME:
 		ym2413_set_mutemask(info->chip, MuteMask);
 		break;
+	case EC_NUKED:
+		OPLL_SetMute(info->chip, MuteMask);
+		break;
 #endif
 	case EC_EMU2413:
 		OPLL_setMask(info->chip, MuteMask);
@@ -286,6 +303,8 @@ void ym2413_set_panning(void *_info, INT16* PanVals)
 	{
 #ifdef ENABLE_ALL_CORES
 	case EC_MAME:
+		break;
+	case EC_NUKED:
 		break;
 #endif
 	case EC_EMU2413:
