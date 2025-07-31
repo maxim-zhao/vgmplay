@@ -1,10 +1,10 @@
 extern "C"
 {
 #include "NukedOPLLWrapper.h"
+#include "Nuked-OPLL/opll.h"
 }
 
 #include <queue>
-#include "opll.h"
 
 class NukedOPLLWrapper
 {
