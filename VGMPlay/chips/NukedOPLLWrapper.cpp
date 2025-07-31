@@ -19,9 +19,9 @@ public:
 	}
 
 	void reset(int mode)
-    {
-        OPLL_Reset(&opll_, mode ? opll_type_ds1001 : opll_type_ym2413);
-    }
+	{
+		OPLL_Reset(&opll_, mode ? opll_type_ds1001 : opll_type_ym2413);
+	}
 
 	void stream_update(stream_sample_t** outputs, int samples)
 	{
@@ -129,30 +129,30 @@ public:
 
 extern "C"
 {
-    void* NukedOPLLWrapper_new(int mode)
-    {
-	    return new NukedOPLLWrapper(mode);
-    }
+	void* NukedOPLLWrapper_new(int mode)
+	{
+		return new NukedOPLLWrapper(mode);
+	}
 
-    void NukedOPLLWrapper_delete(void* chip)
-    {
+	void NukedOPLLWrapper_delete(void* chip)
+	{
 		delete static_cast<NukedOPLLWrapper*>(chip);
-    }
+	}
 
 	void NukedOPLLWrapper_reset(void* chip, uint8_t mode)
-    {
-        static_cast<NukedOPLLWrapper*>(chip)->reset(mode);
-    }
+	{
+		static_cast<NukedOPLLWrapper*>(chip)->reset(mode);
+	}
 
 	void NukedOPLLWrapper_set_mute_mask(void* chip, uint32_t mask)
-    {
-        static_cast<NukedOPLLWrapper*>(chip)->setMuteMask(mask);
-    }
+	{
+		static_cast<NukedOPLLWrapper*>(chip)->setMuteMask(mask);
+	}
 
 	void NukedOPLLWrapper_write(void* chip, uint32_t offset, uint8_t data)
-    {
-        static_cast<NukedOPLLWrapper*>(chip)->buffer_write(offset, data);
-    }
+	{
+		static_cast<NukedOPLLWrapper*>(chip)->buffer_write(offset, data);
+	}
 
 	void NukedOPLLWrapper_stream_update(void* chip, stream_sample_t** outputs, int samples)
 	{
