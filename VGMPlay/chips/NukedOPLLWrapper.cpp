@@ -137,7 +137,7 @@ public:
 		buffered_writes_.emplace(address, data);
 	}
 
-	void setMuteMask(const uint32_t mute_mask)
+	void set_mute_mask(const uint32_t mute_mask)
 	{
 		mute_mask_ = mute_mask;
 	}
@@ -162,7 +162,7 @@ extern "C"
 
 	void NukedOPLLWrapper_set_mute_mask(void* chip, uint32_t mask)
 	{
-		static_cast<NukedOPLLWrapper*>(chip)->setMuteMask(mask);
+		static_cast<NukedOPLLWrapper*>(chip)->set_mute_mask(mask);
 	}
 
 	void NukedOPLLWrapper_write(void* chip, uint32_t offset, uint8_t data)
