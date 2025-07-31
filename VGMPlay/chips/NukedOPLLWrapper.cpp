@@ -42,12 +42,12 @@ public:
 					OPLL_Write(&opll_, write.first, write.second);
 					if (write.first == 0)
 					{
-						// Address mode: must wait 12 clocks
+						// Address write: must wait 12 clocks
 						clocks_until_next_write_ = 12;
 					}
 					else
 					{
-						// data ode: must wait 84 clocks
+						// Data write: must wait 84 clocks
 						clocks_until_next_write_ = 84;
 					}
 
