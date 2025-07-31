@@ -4,7 +4,7 @@
 #include "mamedef.h"
 
 // C functions to hide the CPP
-void* NukedOPLLWrapper_new(int mode);
+void* NukedOPLLWrapper_new(uint8_t mode);
 void NukedOPLLWrapper_delete(void* wrapper);
 void NukedOPLLWrapper_reset(void* chip, uint8_t mode);
 void NukedOPLLWrapper_set_mute_mask(void* chip, uint32_t mask);
