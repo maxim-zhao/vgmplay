@@ -132,7 +132,7 @@ public:
 		}
 	}
 
-	void buffer_write(offs_t address, UINT8 data)
+	void buffer_write(uint32_t address, uint8_t data)
 	{
 		buffered_writes_.emplace(address, data);
 	}
