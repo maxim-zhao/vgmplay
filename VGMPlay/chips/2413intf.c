@@ -1,6 +1,6 @@
 /****************************************************************
 
-    MAME / MESS functions
+	MAME / MESS functions
 
 ****************************************************************/
 
@@ -11,7 +11,7 @@
 //#include "streams.h"
 #ifdef ENABLE_ALL_CORES
 #include "ym2413.h"
-#include "opll.h"
+#include "NukedOPLLWrapper.h"
 #endif
 #include "emu2413.h"
 #include "2413intf.h"
@@ -37,28 +37,6 @@ static unsigned char vrc7_inst[(16 + 3) * 8] =
 #include "vrc7tone.h"
 };
 
-/*INLINE ym2413_state *get_safe_token(const device_config *device)
-{
-	assert(device != NULL);
-	assert(device->token != NULL);
-	assert(device->type == SOUND);
-	assert(sound_get_type(device) == SOUND_YM2413);
-	return (ym2413_state *)device->token;
-}*/
-
-#ifdef UNUSED_FUNCTION
-void YM2413DAC_update(int chip,stream_sample_t **inputs, stream_sample_t **_buffer,int length)
-{
-    INT16 *buffer = _buffer[0];
-    static int out = 0;
-
-    if ( ym2413[chip].reg[0x0F] & 0x01 )
-    {
-        out = ((ym2413[chip].reg[0x10] & 0xF0) << 7);
-    }
-    while (length--) *(buffer++) = out;
-}
-#endif
 
 //static STREAM_UPDATE( ym2413_stream_update )
 void ym2413_stream_update(void *_info, stream_sample_t **outputs, int samples)
@@ -71,16 +49,16 @@ void ym2413_stream_update(void *_info, stream_sample_t **outputs, int samples)
 		ym2413_update_one(info->chip, outputs, samples);
 		break;
 	case EC_NUKED:
-		OPLL_GenerateStream(info->chip, outputs, samples);
+		NukedOPLLWrapper_stream_update(info->chip, outputs, samples);
 		break;
 #endif
 	case EC_EMU2413:
 		stream_sample_t* pLeft = outputs[0];
 		stream_sample_t* pRight = outputs[1];
 		for (int i = 0; i < samples; ++i)
-        {
-            *pLeft++ = *pRight++ = OPLL_calc(info->chip);
-        }
+		{
+			*pLeft++ = *pRight++ = OPLL_calc(info->chip);
+		}
 		break;
 	}
 }
@@ -106,7 +84,7 @@ static void _stream_update(void *param, int interval)
 		_emu2413_calc_stereo(info->chip, DUMMYBUF, 0);
 		break;
 	}
-    */
+	*/
 }
 
 //static DEVICE_START( ym2413 )
@@ -145,11 +123,7 @@ int device_start_ym2413(void **_info, int EMU_CORE, int clock, int CHIP_SAMPLING
 		ym2413_set_update_handler(info->chip, _stream_update, info);
 		break;
 	case EC_NUKED:
-		info->chip = malloc(sizeof(opll_t));
-		//if(chiptype)
-		//	OPN2_SetChipType(ym3438_type_discrete);
-		type = info->Mode ? opll_type_ds1001 : opll_type_ym2413;
-		OPLL_Reset(info->chip, type, rate, clock);
+		info->chip = NukedOPLLWrapper_new(info->Mode);
 		break;
 #endif
 	case EC_EMU2413:
@@ -203,7 +177,7 @@ void device_stop_ym2413(void *_info)
 		ym2413_shutdown(info->chip);
 		break;
 	case EC_NUKED:
-		free(info->chip);
+		NukedOPLLWrapper_delete(info->chip);
 		break;
 #endif
 	case EC_EMU2413:
@@ -228,7 +202,7 @@ void device_reset_ym2413(void *_info)
 			ym2413_override_patches(info->chip, vrc7_inst);
 		break;
 	case EC_NUKED:
-		OPLL_Reset(info->chip, info->Mode ? opll_type_ds1001 : opll_type_ym2413, 0, 0);
+		NukedOPLLWrapper_reset(info->chip, info->Mode);
 		break;
 #endif
 	case EC_EMU2413:
@@ -253,7 +227,7 @@ void ym2413_w(void *_info, offs_t offset, UINT8 data)
 		ym2413_write(info->chip, offset & 1, data);
 		break;
 	case EC_NUKED:
-		OPLL_WriteBuffered(info->chip, offset, data);
+		NukedOPLLWrapper_write(info->chip, offset & 1, data);
 		break;
 #endif
 	case EC_EMU2413:
@@ -284,7 +258,7 @@ void ym2413_set_mute_mask(void *_info, UINT32 MuteMask)
 		ym2413_set_mutemask(info->chip, MuteMask);
 		break;
 	case EC_NUKED:
-		OPLL_SetMute(info->chip, MuteMask);
+		NukedOPLLWrapper_set_mute_mask(info->chip, MuteMask);
 		break;
 #endif
 	case EC_EMU2413:

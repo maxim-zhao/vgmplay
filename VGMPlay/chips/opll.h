@@ -17,17 +17,13 @@
  *      siliconpr0n.org(digshadow, John McMaster):
  *          VRC VII decap and die shot.
  *
- *  version: 1.0
+ *  version: 1.0.1
  */
 
 #ifndef OPLL_H
 #define OPLL_H
 
-#include "emutypes.h"
-
-#define RSM_FRAC 10
-#define OPLL_WRITEBUF_SIZE 2048
-#define OPLL_WRITEBUF_DELAY 20
+#include <stdint.h>
 
 enum {
     opll_type_ym2413 = 0x00,    /* Yamaha YM2413  */
@@ -63,12 +59,6 @@ enum {
     opll_patch_drum_5,
     opll_patch_max
 };
-
-typedef struct _opll_writebuf {
-    uint64_t time;
-    uint8_t port;
-    uint8_t data;
-} opll_writebuf;
 
 typedef struct {
     uint8_t tl;
@@ -201,25 +191,9 @@ typedef struct {
     int16_t output_m;
     int16_t output_r;
 
-    uint32_t mute[14];
-    int32_t rateratio;
-    int32_t samplecnt;
-    int32_t oldsamples[2];
-    int32_t samples[2];
-
-    uint64_t writebuf_samplecnt;
-    uint32_t writebuf_cur;
-    uint32_t writebuf_last;
-    uint64_t writebuf_lasttime;
-    opll_writebuf writebuf[OPLL_WRITEBUF_SIZE];
-
 } opll_t;
 
-void OPLL_Reset(opll_t *chip, uint32_t chip_type, uint32_t rate, uint32_t clock);
+void OPLL_Reset(opll_t *chip, uint32_t chip_type);
 void OPLL_Clock(opll_t *chip, int32_t *buffer);
 void OPLL_Write(opll_t *chip, uint32_t port, uint8_t data);
-
-void OPLL_WriteBuffered(opll_t*chip, uint32_t port, uint8_t data);
-void OPLL_GenerateStream(opll_t*chip, int32_t **sndptr, uint32_t numsamples);
-void OPLL_SetMute(opll_t*chip, uint32_t mute);
 #endif

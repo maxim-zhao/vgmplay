@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Nuke.YKT
+ * Copyright (C) 2019-2023 Nuke.YKT
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
  *      siliconpr0n.org(digshadow, John McMaster):
  *          VRC VII decap and die shot.
  *
- *  version: 1.0
+ *  version: 1.0.2
  */
 
 #include <string.h>
@@ -132,7 +132,7 @@ static const opll_patch_t patch_ds1001[opll_patch_max] = {
     { 0x00, 0x00, 0x00, 0x00,{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x01, 0x00 },{ 0x00, 0x00 },{ 0x0c, 0x00 },{ 0x08, 0x00 },{ 0x0a, 0x00 },{ 0x07, 0x00 } },
     { 0x00, 0x00, 0x00, 0x00,{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x05, 0x00 },{ 0x00, 0x00 },{ 0x0f, 0x00 },{ 0x08, 0x00 },{ 0x05, 0x00 },{ 0x09, 0x00 } },
     { 0x00, 0x00, 0x00, 0x00,{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x01 },{ 0x00, 0x00 },{ 0x00, 0x0f },{ 0x00, 0x08 },{ 0x00, 0x06 },{ 0x00, 0x0d } },
-    { 0x00, 0x00, 0x00, 0x00,{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x01 },{ 0x00, 0x00 },{ 0x00, 0x0d },{ 0x00, 0x08 },{ 0x00, 0x06 },{ 0x00, 0x08 } },
+    { 0x00, 0x00, 0x00, 0x00,{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x01 },{ 0x00, 0x00 },{ 0x00, 0x0d },{ 0x00, 0x08 },{ 0x00, 0x04 },{ 0x00, 0x08 } },
     { 0x00, 0x00, 0x00, 0x00,{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x00 },{ 0x00, 0x01 },{ 0x00, 0x00 },{ 0x00, 0x0a },{ 0x00, 0x0a },{ 0x00, 0x05 },{ 0x00, 0x05 } }
 };
 
@@ -230,7 +230,7 @@ static const uint32_t eg_ksltable[16] = {
     0, 32, 40, 45, 48, 51, 53, 55, 56, 58, 59, 60, 61, 62, 63, 64
 };
 
-void OPLL_DoIO(opll_t *chip) {
+static void OPLL_DoIO(opll_t *chip) {
     /* Write signal check */
     chip->write_a_en = (chip->write_a & 0x03) == 0x01;
     chip->write_d_en = (chip->write_d & 0x03) == 0x01;
@@ -238,10 +238,9 @@ void OPLL_DoIO(opll_t *chip) {
     chip->write_d <<= 1;
 }
 
-void OPLL_DoModeWrite(opll_t *chip) {
-    uint8_t slot;
+static void OPLL_DoModeWrite(opll_t *chip) {
     if ((chip->write_mode_address & 0x10) && chip->write_d_en) {
-        slot = chip->write_mode_address & 0x01;
+        uint8_t slot = chip->write_mode_address & 0x01;
         switch (chip->write_mode_address & 0x0f) {
         case 0x00:
         case 0x01:
@@ -291,10 +290,8 @@ void OPLL_DoModeWrite(opll_t *chip) {
     }
 }
 
-void OPLL_Reset(opll_t *chip, uint32_t chip_type, uint32_t rate, uint32_t clock) {
+void OPLL_Reset(opll_t *chip, uint32_t chip_type) {
     uint32_t i;
-    uint32_t rateratio;
-    rateratio = chip->rateratio;
     memset(chip, 0, sizeof(opll_t));
     chip->chip_type = chip_type;
     if (chip_type == opll_type_ds1001) {
@@ -326,20 +323,9 @@ void OPLL_Reset(opll_t *chip, uint32_t chip_type, uint32_t rate, uint32_t clock)
         chip->eg_out = 0x7f;
     }
     chip->rm_select = rm_num_tc + 1;
-
-    if (rate != 0)
-    {
-        chip->rateratio = (uint32_t)((((uint64_t)72 * rate) << RSM_FRAC) / clock);
-    }
-    else
-    {
-        chip->rateratio = rateratio;
-    }
 }
 
-void OPLL_DoRegWrite(opll_t *chip) {
-    uint32_t channel;
-
+static void OPLL_DoRegWrite(opll_t *chip) {
     /* Address */
     if (chip->write_a_en) {
         if ((chip->write_data & 0xc0) == 0x00) {
@@ -358,7 +344,7 @@ void OPLL_DoRegWrite(opll_t *chip) {
     /* Update registers */
     if (chip->write_fm_data && !chip->write_a_en) {
         if ((chip->address & 0x0f) == chip->cycles && chip->cycles < 16) {
-            channel = chip->cycles % 9;
+            uint32_t channel = chip->cycles % 9;
             switch (chip->address & 0xf0) {
             case 0x10:
                 if (chip->chip_type == opll_type_ym2420)
@@ -404,7 +390,8 @@ void OPLL_DoRegWrite(opll_t *chip) {
     }
 
 }
-void OPLL_PreparePatch1(opll_t *chip) {
+
+static void OPLL_PreparePatch1(opll_t *chip) {
     uint8_t instr;
     uint32_t mcsel = ((chip->cycles + 1) / 3) & 0x01;
     uint32_t instr_index;
@@ -441,7 +428,7 @@ void OPLL_PreparePatch1(opll_t *chip) {
     chip->c_ksl_block = (chip->block[ch]);
 }
 
-void OPLL_PreparePatch2(opll_t *chip) {
+static void OPLL_PreparePatch2(opll_t *chip) {
     uint8_t instr;
     uint32_t mcsel = ((chip->cycles + 1) / 3) & 0x01;
     uint32_t instr_index;
@@ -473,11 +460,11 @@ void OPLL_PreparePatch2(opll_t *chip) {
     chip->c_dm |= patch->dm;
 }
 
-void OPLL_PhaseGenerate(opll_t *chip) {
+static void OPLL_PhaseGenerate(opll_t *chip) {
     uint32_t ismod;
-    uint32_t phase;
-    uint8_t rm_bit;
+    uint32_t phase;  
     uint16_t pg_out;
+    uint8_t rm_bit;
 
     chip->pg_phase[(chip->cycles + 17) % 18] = chip->pg_phase_next + chip->pg_inc;
 
@@ -539,7 +526,7 @@ void OPLL_PhaseGenerate(opll_t *chip) {
     chip->pg_out = pg_out;
 }
 
-void OPLL_PhaseCalcIncrement(opll_t *chip) {
+static void OPLL_PhaseCalcIncrement(opll_t *chip) {
     uint32_t freq;
     uint16_t block;
     freq = chip->c_fnum << 1;
@@ -572,8 +559,7 @@ void OPLL_PhaseCalcIncrement(opll_t *chip) {
     chip->pg_inc = (freq * pg_multi[chip->c_multi]) >> 1;
 }
 
-void OPLL_EnvelopeKSLTL(opll_t *chip)
-{
+static void OPLL_EnvelopeKSLTL(opll_t *chip) {
     int32_t ksl;
 
     ksl = eg_ksltable[chip->c_ksl_freq]-((8-chip->c_ksl_block)<<3);
@@ -592,8 +578,7 @@ void OPLL_EnvelopeKSLTL(opll_t *chip)
     chip->eg_ksltl = ksl + (chip->c_tl<<1);
 }
 
-void OPLL_EnvelopeOutput(opll_t *chip)
-{
+static void OPLL_EnvelopeOutput(opll_t *chip) {
     int32_t level = chip->eg_level[(chip->cycles+17)%18];
 
     level += chip->eg_ksltl;
@@ -613,7 +598,7 @@ void OPLL_EnvelopeOutput(opll_t *chip)
     chip->eg_out = level;
 }
 
-void OPLL_EnvelopeGenerate(opll_t *chip) {
+static void OPLL_EnvelopeGenerate(opll_t *chip) {
     uint8_t timer_inc;
     uint8_t timer_bit;
     uint8_t timer_low;
@@ -693,13 +678,8 @@ void OPLL_EnvelopeGenerate(opll_t *chip) {
     switch (state) {
     case eg_num_attack:
         if (!chip->eg_maxrate && (chip->eg_kon & 2) && !zero) {
-            int32_t shift = chip->eg_rate_hi - 11 + chip->eg_inc_hi;
-            if (chip->eg_inc_lo) {
-                shift = 1;
-            }
+            int32_t shift = (chip->eg_rate_hi < 12) ? chip->eg_inc_lo : (chip->eg_rate_hi - 11 + chip->eg_inc_hi);
             if (shift > 0) {
-                if (shift > 4)
-                    shift = 4;
                 step = ~level >> (5 - shift);
             }
         }
@@ -845,12 +825,10 @@ void OPLL_EnvelopeGenerate(opll_t *chip) {
     chip->eg_sl = chip->c_sl;
 }
 
-void OPLL_Channel(opll_t *chip) {
-    int16_t sign;
+static void OPLL_Channel(opll_t *chip) {   
     int16_t ch_out = chip->ch_out;
     uint8_t ismod = (chip->cycles / 3) & 1;
-    uint8_t mute_m = ismod || ((chip->rm_enable&0x40) && (chip->cycles+15)%18 >= 12);
-    uint8_t mute_r = 1;
+    uint8_t mute_m = ismod || ((chip->rm_enable&0x40) && (chip->cycles+15)%18 >= 12);  
     if (chip->chip_type == opll_type_ds1001) {
         chip->output_m = ch_out;
         if (chip->output_m >= 0) {
@@ -862,6 +840,7 @@ void OPLL_Channel(opll_t *chip) {
         chip->output_r = 0;
         return;
     } else {
+        uint8_t mute_r = 1;
         /* TODO: This might be incorrect */
         if ((chip->rm_enable & 0x40)) {
             switch (chip->cycles) {
@@ -889,7 +868,7 @@ void OPLL_Channel(opll_t *chip) {
             else
                 chip->output_r = ch_out;
         } else {
-            sign = ch_out >> 8;
+            int16_t sign = ch_out >> 8;
             if (ch_out >= 0) {
                 ch_out++;
                 sign++;
@@ -906,7 +885,7 @@ void OPLL_Channel(opll_t *chip) {
     }
 }
 
-void OPLL_Operator(opll_t *chip) {
+static void OPLL_Operator(opll_t *chip) {
     uint8_t ismod1, ismod2, ismod3;
     uint32_t op_mod;
     uint16_t exp_shift;
@@ -1017,10 +996,13 @@ void OPLL_Operator(opll_t *chip) {
         }
     }
 
+    if (!(chip->rm_enable & 0x80))
+        routput = 0;
+
     chip->ch_out = ismod1 ? routput : (output>>3);
 }
 
-void OPLL_DoRhythm(opll_t *chip) {
+static void OPLL_DoRhythm(opll_t *chip) {
     uint8_t nbit;
 
     /* Noise */
@@ -1029,14 +1011,13 @@ void OPLL_DoRhythm(opll_t *chip) {
     chip->rm_noise = (nbit << 22) | (chip->rm_noise >> 1);
 }
 
-void OPLL_DoLFO(opll_t *chip) {
-    uint8_t vib_step;
+static void OPLL_DoLFO(opll_t *chip) {   
     uint8_t am_inc = 0;
     uint8_t am_bit;
     
     /* Update counter */
     if (chip->cycles == 17) {
-        vib_step = ((chip->lfo_counter & 0x3ff) + 1) >> 10;
+        uint8_t vib_step = ((chip->lfo_counter & 0x3ff) + 1) >> 10;
         chip->lfo_am_step = ((chip->lfo_counter & 0x3f) + 1) >> 6;
         vib_step |= (chip->testmode >> 3) & 0x01;
         chip->lfo_vib_counter += vib_step;
@@ -1125,196 +1106,5 @@ void OPLL_Write(opll_t *chip, uint32_t port, uint8_t data) {
     } else {
         /* Address */
         chip->write_a |= 1;
-    }
-}
-
-void OPLL_WriteBuffered(opll_t* chip, uint32_t port, uint8_t data)
-{
-    uint64_t time1, time2;
-    int32_t buffer[2];
-    uint64_t skip;
-
-    if (chip->writebuf[chip->writebuf_last].port & 0x04)
-    {
-        OPLL_Write(chip, chip->writebuf[chip->writebuf_last].port & 0x03,
-            chip->writebuf[chip->writebuf_last].data);
-
-        chip->writebuf_cur = (chip->writebuf_last + 1) % OPLL_WRITEBUF_SIZE;
-        skip = chip->writebuf[chip->writebuf_last].time - chip->writebuf_samplecnt;
-        chip->writebuf_samplecnt = chip->writebuf[chip->writebuf_last].time;
-        while (skip--)
-        {
-            OPLL_Clock(chip, buffer);
-        }
-    }
-
-    chip->writebuf[chip->writebuf_last].port = (port & 0x03) | 0x04;
-    chip->writebuf[chip->writebuf_last].data = data;
-    time1 = chip->writebuf_lasttime + OPLL_WRITEBUF_DELAY;
-    time2 = chip->writebuf_samplecnt;
-
-    if (time1 < time2)
-    {
-        time1 = time2;
-    }
-
-    chip->writebuf[chip->writebuf_last].time = time1;
-    chip->writebuf_lasttime = time1;
-    chip->writebuf_last = (chip->writebuf_last + 1) % OPLL_WRITEBUF_SIZE;
-}
-
-#define OUTPUT_FACTOR 8
-
-void OPLL_GenerateResampled(opll_t *chip, int32_t *buf)
-{
-    uint32_t i;
-    int32_t buffer[2];
-    uint32_t mute_m, mute_r;
-    int32_t sum;
-
-    while (chip->samplecnt >= chip->rateratio)
-    {
-        chip->oldsamples[0] = chip->samples[0];
-        chip->oldsamples[1] = chip->samples[1];
-        chip->samples[0] = chip->samples[1] = 0;
-        for (i = 0; i < 18; i++)
-        {
-            switch (chip->cycles)
-            {
-            case 1:
-                mute_m = chip->mute[6];
-                mute_r = chip->mute[9];
-                break;
-            case 2:
-                mute_m = chip->mute[7];
-                mute_r = chip->mute[10];
-                break;
-            case 3:
-                mute_m = chip->mute[8];
-                mute_r = chip->mute[12];
-                break;
-            case 4:
-                mute_m = 0;
-                mute_r = chip->mute[13];
-                break;
-            case 5:
-                mute_m = 0;
-                mute_r = chip->mute[11];
-                break;
-            case 6:
-                mute_m = 0;
-                mute_r = chip->mute[9];
-                break;
-            case 7:
-                mute_m = chip->mute[0];
-                mute_r = 0;
-                break;
-            case 8:
-                mute_m = chip->mute[1];
-                mute_r = 0;
-                break;
-            case 9:
-                mute_m = chip->mute[2];
-                mute_r = 0;
-                break;
-            case 10:
-                mute_m = 0;
-                mute_r = chip->mute[10];
-                break;
-            case 11:
-                mute_m = 0;
-                mute_r = chip->mute[12];
-                break;
-            case 12:
-                mute_m = 0;
-                mute_r = 0;
-                break;
-            case 13:
-                mute_m = chip->mute[3];
-                mute_r = 0;
-                break;
-            case 14:
-                mute_m = chip->mute[4];
-                mute_r = 0;
-                break;
-            case 15:
-                mute_m = chip->mute[5];
-                mute_r = 0;
-                break;
-            case 16:
-                mute_m = 0;
-                mute_r = 0;
-                break;
-            case 17:
-                mute_m = 0;
-                mute_r = chip->mute[13];
-                break;
-            case 0:
-                mute_m = 0;
-                mute_r = chip->mute[11];
-                break;
-            default:
-                mute_m = 0;
-                mute_r = 0;
-                break;
-            }
-            OPLL_Clock(chip, buffer);
-            if (!mute_m)
-            {
-                chip->samples[0] += buffer[0];
-            }
-            if (!mute_r)
-            {
-                chip->samples[1] += buffer[1];
-            }
-
-            while (chip->writebuf[chip->writebuf_cur].time <= chip->writebuf_samplecnt)
-            {
-                if (!(chip->writebuf[chip->writebuf_cur].port & 0x04))
-                {
-                    break;
-                }
-                chip->writebuf[chip->writebuf_cur].port &= 0x03;
-                OPLL_Write(chip, chip->writebuf[chip->writebuf_cur].port,
-                    chip->writebuf[chip->writebuf_cur].data);
-                chip->writebuf_cur = (chip->writebuf_cur + 1) % OPLL_WRITEBUF_SIZE;
-            }
-            chip->writebuf_samplecnt++;
-        }
-        chip->samples[0] *= OUTPUT_FACTOR;
-        chip->samples[1] *= OUTPUT_FACTOR;
-        sum = chip->samples[0] + chip->samples[1];
-        chip->samples[1] = chip->samples[0] = sum;
-        chip->samplecnt -= chip->rateratio;
-    }
-    buf[0] = (int32_t)((chip->oldsamples[0] * (chip->rateratio - chip->samplecnt)
-        + chip->samples[0] * chip->samplecnt) / chip->rateratio);
-    buf[1] = (int32_t)((chip->oldsamples[1] * (chip->rateratio - chip->samplecnt)
-        + chip->samples[1] * chip->samplecnt) / chip->rateratio);
-    chip->samplecnt += 1 << RSM_FRAC;
-}
-
-void OPLL_GenerateStream(opll_t* chip, int32_t** sndptr, uint32_t numsamples)
-{
-    uint32_t i;
-    int32_t* smpl, * smpr;
-    int32_t buffer[2];
-    smpl = sndptr[0];
-    smpr = sndptr[1];
-
-    for (i = 0; i < numsamples; i++)
-    {
-        OPLL_GenerateResampled(chip, buffer);
-        *smpl++ = buffer[0];
-        *smpr++ = buffer[1];
-    }
-}
-
-void OPLL_SetMute(opll_t* chip, uint32_t mute)
-{
-    uint32_t i;
-    for (i = 0; i < 14; i++)
-    {
-        chip->mute[i] = (mute >> i) & 0x01;
     }
 }
