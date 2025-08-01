@@ -93,23 +93,11 @@ int device_start_ym2612(void **_info, int EMU_CORE, int ChipFlags, int clock, in
 	if ((CHIP_SAMPLING_MODE == 0x01 && rate < CHIP_SAMPLE_RATE) ||
 		CHIP_SAMPLING_MODE == 0x02)
 		rate = CHIP_SAMPLE_RATE;
-	//info->intf = device->static_config ? (const ym2612_interface *)device->static_config : &dummy;
-	//info->intf = &dummy;
-	//info->device = device;
-
-	/* FM init */
-	/* Timer Handler set */
-	//info->timer[0] = timer_alloc(device->machine, timer_callback_2612_0, info);
-	//info->timer[1] = timer_alloc(device->machine, timer_callback_2612_1, info);
-
-	/* stream system initialize */
-	//info->stream = stream_create(device,0,2,rate,info,ym2612_stream_update);
 
 	/**** initialize YM2612 ****/
 	switch(EMU_CORE)
 	{
 	case EC_MAME:
-		//info->chip = ym2612_init(info,clock,rate,timer_handler,IRQHandler);
 		info->chip = ym2612_init(info, clock, rate, NULL, NULL, IsVGMInit, ChipFlags);
 		break;
 #ifdef ENABLE_ALL_CORES
@@ -125,6 +113,7 @@ int device_start_ym2612(void **_info, int EMU_CORE, int ChipFlags, int clock, in
 		break;
 	case EC_NUKED:
 		info->chip = NukedOPN2Wrapper_new();
+		rate = clock / 6 / 24;
 		break;
 #endif
 	}

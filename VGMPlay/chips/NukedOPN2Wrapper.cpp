@@ -34,7 +34,7 @@ public:
 			int32_t right = 0;
 
 			// We clock the chip 24 times per sample...
-			for (int j = 0; j < 12; ++j)
+			for (int j = 0; j < 24; ++j)
 			{
 				// If we have any buffered writes, we can emit them while clocking,
 				// but not too fast...
