@@ -6,21 +6,20 @@
 
 #include "mamedef.h"
 #include <stdlib.h>
-#include <stddef.h>	// for NULL
-//#include "sndintrf.h"
-//#include "streams.h"
 #ifdef ENABLE_ALL_CORES
 #include "ym2413.h"
 #include "NukedOPLLWrapper.h"
+#include "YMFMWrapper.h"
 #endif
 #include "emu2413.h"
 #include "2413intf.h"
 
-#ifdef ENABLE_ALL_CORES
-#define EC_NUKED	0x02	// Nuked OPLL
-#define EC_MAME		0x01	// YM2413 core from MAME
-#endif
 #define EC_EMU2413	0x00	// EMU2413 core from in_vgm, value 0 because it's better than MAME
+#ifdef ENABLE_ALL_CORES
+#define EC_MAME		0x01	// YM2413 core from MAME
+#define EC_NUKED	0x02	// Nuked OPLL
+#define EC_YMFM		0x03	// Aaron Giles' ymfm, as seen in newer MAME
+#endif
 
 /* for stream system */
 typedef struct _ym2413_state ym2413_state;
@@ -50,6 +49,9 @@ void ym2413_stream_update(void *_info, stream_sample_t **outputs, int samples)
 		break;
 	case EC_NUKED:
 		NukedOPLLWrapper_stream_update(info->chip, outputs, samples);
+		break;
+	case EC_YMFM:
+		YMFMWrapper_stream_update(info->chip, outputs, samples);
 		break;
 #endif
 	case EC_EMU2413:
@@ -92,7 +94,6 @@ int device_start_ym2413(void **_info, int EMU_CORE, int clock, int CHIP_SAMPLING
 {
 	//ym2413_state *info = get_safe_token(device);
 	ym2413_state *info;
-	int type;
 	int rate;
 
 	info = (ym2413_state *) calloc(1, sizeof(ym2413_state));
@@ -124,6 +125,9 @@ int device_start_ym2413(void **_info, int EMU_CORE, int clock, int CHIP_SAMPLING
 		break;
 	case EC_NUKED:
 		info->chip = NukedOPLLWrapper_new(info->Mode);
+		break;
+	case EC_YMFM:
+		info->chip = YMFMWrapper_new(info->Mode);
 		break;
 #endif
 	case EC_EMU2413:
@@ -179,6 +183,9 @@ void device_stop_ym2413(void *_info)
 	case EC_NUKED:
 		NukedOPLLWrapper_delete(info->chip);
 		break;
+	case EC_YMFM:
+		YMFMWrapper_delete(info->chip);
+		break;
 #endif
 	case EC_EMU2413:
 		OPLL_delete(info->chip);
@@ -204,6 +211,10 @@ void device_reset_ym2413(void *_info)
 	case EC_NUKED:
 		NukedOPLLWrapper_reset(info->chip, info->Mode);
 		break;
+	case EC_YMFM:
+		YMFMWrapper_reset(info->chip, info->Mode);
+		// TODO: real patches?
+		break;
 #endif
 	case EC_EMU2413:
 		OPLL_reset(info->chip);
@@ -228,6 +239,9 @@ void ym2413_w(void *_info, offs_t offset, UINT8 data)
 		break;
 	case EC_NUKED:
 		NukedOPLLWrapper_write(info->chip, offset & 1, data);
+		break;
+	case EC_YMFM:
+		YMFMWrapper_write(info->chip, offset & 1, data);
 		break;
 #endif
 	case EC_EMU2413:
@@ -260,6 +274,9 @@ void ym2413_set_mute_mask(void *_info, UINT32 MuteMask)
 	case EC_NUKED:
 		NukedOPLLWrapper_set_mute_mask(info->chip, MuteMask);
 		break;
+	case EC_YMFM:
+		YMFMWrapper_set_mute_mask(info->chip, MuteMask);
+		break;
 #endif
 	case EC_EMU2413:
 		OPLL_setMask(info->chip, MuteMask);
@@ -279,6 +296,8 @@ void ym2413_set_panning(void *_info, INT16* PanVals)
 	case EC_MAME:
 		break;
 	case EC_NUKED:
+		break;
+	case EC_YMFM:
 		break;
 #endif
 	case EC_EMU2413:

@@ -2,3 +2,7 @@
 	path = VGMPlay/chips/Nuked-OPLL
 	url = https://github.com/nukeykt/Nuked-OPLL.git
 	branch = master
+[submodule "VGMPlay/chips/ymfm"]
+	path = VGMPlay/chips/ymfm
+	url = https://github.com/aaronsgiles/ymfm.git
+	branch = main
