@@ -13,7 +13,7 @@
 #include "ym2413.h"
 #include "NukedOPLLWrapper.h"
 #endif
-#include "emu2413.h"
+#include "emu2413/emu2413.h"
 #include "2413intf.h"
 
 #ifdef ENABLE_ALL_CORES

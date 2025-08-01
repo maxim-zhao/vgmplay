@@ -6,3 +6,7 @@
 	path = VGMPlay/chips/Nuked-OPN2
 	url = https://github.com/nukeykt/Nuked-OPN2.git
 	branch = master
+[submodule "VGMPlay/chips/emu2413"]
+	path = VGMPlay/chips/emu2413
+	url = https://github.com/digital-sound-antiques/emu2413.git
+	branch = main
